@@ -37,12 +37,24 @@ export function SpeechPipeline({
   // Speech recognition
   const { isListening, isSupported, startListening, stopListening, toggleListening, updateLanguage } = useVoiceInput({
     language: getVoiceCode(inputLang),
-    continuous: false,
+    continuous: true,
     onResult: (text, isFinal) => {
-      if (isFinal) {
+      // isFinal === true means a final result from recognition
+      // We treat interim results (isFinal === false) and reset debounce timer
+      if (!isFinal) {
+        if (onInterimResult) onInterimResult(text);
+        // reset debounce timer — wait for 5s of silence to consider final
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          handleFinalSpeech(text);
+        }, 5000);
+      } else {
+        // immediate final result from recognition -> process now
+        if (debounceRef.current) {
+          clearTimeout(debounceRef.current);
+          debounceRef.current = null;
+        }
         handleFinalSpeech(text);
-      } else if (onInterimResult) {
-        onInterimResult(text);
       }
     },
     onError: (err) => {
@@ -126,6 +138,10 @@ export function SpeechPipeline({
   useEffect(() => {
     stop();
     stopListening();
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
   }, [language, stop, stopListening]);
 
   const toggleVoice = useCallback(() => {

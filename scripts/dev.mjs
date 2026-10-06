@@ -8,13 +8,13 @@ const rootDir = path.resolve(scriptDir, '..')
 const children = []
 let shuttingDown = false
 
-const startProcess = (name, command, args) => {
+const startProcess = (name, command, args, targetCwd = rootDir) => {
   const isWindows = process.platform === 'win32'
   const spawnCommand = isWindows ? 'cmd.exe' : command
   const spawnArgs = isWindows ? ['/c', command, ...args] : args
 
   const child = spawn(spawnCommand, spawnArgs, {
-    cwd: rootDir,
+    cwd: targetCwd,
     stdio: 'inherit',
   })
 
@@ -54,8 +54,8 @@ process.on('SIGINT', () => shutdown(0))
 process.on('SIGTERM', () => shutdown(0))
 
 console.log('Starting backend and frontend...')
-console.log('Backend: npm --prefix backend run dev')
-console.log('Frontend: npm --prefix frontend run dev')
+console.log('Backend: http://localhost:3002')
+console.log('Frontend: http://localhost:5173')
 
-startProcess('backend', 'npm', ['--prefix', 'backend', 'run', 'dev'])
-startProcess('frontend', 'npm', ['--prefix', 'frontend', 'run', 'dev'])
+startProcess('backend', 'npm', ['run', 'dev'], path.resolve(rootDir, 'backend'))
+startProcess('frontend', 'npm', ['run', 'dev'], path.resolve(rootDir, 'frontend'))

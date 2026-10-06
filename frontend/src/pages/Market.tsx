@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import api from '../lib/api'
 import {
   AlertCircle,
@@ -87,10 +88,25 @@ function StatCard({ label, value, sublabel, tone }: { label: string; value: stri
 }
 
 export default function Market() {
-  const [cropQuery, setCropQuery] = useState('Tomato')
-  const [stateFilter, setStateFilter] = useState('')
-  const [expandedCrop, setExpandedCrop] = useState<string | null>('Tomato')
+  const [searchParams] = useSearchParams()
+  const [cropQuery, setCropQuery] = useState(() => searchParams.get('crop') || 'Tomato')
+  const [stateFilter, setStateFilter] = useState(() => searchParams.get('state') || '')
+  const [expandedCrop, setExpandedCrop] = useState<string | null>(() => searchParams.get('crop') || 'Tomato')
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
+
+  useEffect(() => {
+    const cropParam = searchParams.get('crop')
+    const stateParam = searchParams.get('state')
+
+    if (cropParam) {
+      setCropQuery(cropParam)
+      setExpandedCrop(cropParam)
+    }
+
+    if (stateParam) {
+      setStateFilter(stateParam)
+    }
+  }, [searchParams])
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['market', 'prices', cropQuery, stateFilter],

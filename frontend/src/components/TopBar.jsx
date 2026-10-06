@@ -180,10 +180,6 @@ export default function TopBar({ title, subtitle, status = 'connected', actions,
       )}
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1 text-[10px] font-semibold uppercase tracking-[0.2em]" style={{ color: '#8dbf96' }}>
-          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
-          VaagAi Smart Farming Platform
-        </div>
         <h1
           className="leading-none font-bold tracking-tight truncate"
           style={{

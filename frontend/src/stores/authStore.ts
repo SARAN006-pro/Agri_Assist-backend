@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import api from '../lib/api'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002'
 import type { User } from '../types'
 
 interface AuthState {
@@ -45,36 +47,29 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signInWithGoogle: async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    })
+    // Redirect to backend OAuth endpoint to use server-side Google flow
+    window.location.href = `${API_URL}/api/auth/google`
   },
 
   signInWithEmail: async (email, password) => {
-    console.log('Attempting login with:', email)
     try {
       const response = await api.post('/api/auth/login', { email, password })
-      console.log('Full login response:', response)
       const data = response.data
-      console.log('Login response data:', data)
       localStorage.setItem('vaagai_token', data.token)
+      localStorage.setItem('token', data.token)
       if (data.user?.id) {
         localStorage.setItem('vaagai_user_id', data.user.id)
-        console.log('Set userId:', data.user.id)
+        try {
+          localStorage.setItem('user', JSON.stringify(data.user))
+        } catch {}
       } else {
-        console.warn('No user id in response, using email as fallback')
         localStorage.setItem('vaagai_user_id', data.user?.email || email)
+        try {
+          localStorage.setItem('user', JSON.stringify({ email: data.user?.email || email }))
+        } catch {}
       }
       set({ user: data.user, token: data.token })
     } catch (err) {
-      console.error('Login API error:', err)
       throw err
     }
   },
@@ -88,16 +83,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       password
     })
     localStorage.setItem('vaagai_token', data.token)
-    if (data.user?.id) {
-      localStorage.setItem('vaagai_user_id', data.user.id)
-    }
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('vaagai_user_id', data.user?.id || email)
+    try { localStorage.setItem('user', JSON.stringify(data.user || { email })) } catch {}
     set({ user: data.user, token: data.token })
   },
 
   signOut: async () => {
     await supabase.auth.signOut()
     localStorage.removeItem('vaagai_token')
+    localStorage.removeItem('token')
     localStorage.removeItem('vaagai_user_id')
+    localStorage.removeItem('user')
     set({ user: null, token: null })
   },
 }))

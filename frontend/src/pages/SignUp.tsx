@@ -21,11 +21,11 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const token = localStorage.getItem("vaagai_token")
+    const token = localStorage.getItem("token")
     const user = localStorage.getItem("user")
 
     if (token && user) {
-      navigate("/farm", { replace: true })
+      navigate("/dashboard", { replace: true })
     }
   }, [navigate])
 
@@ -67,12 +67,9 @@ export default function SignUp() {
         throw new Error(data.error || data.errors?.[0]?.message || "Registration failed")
       }
 
-      localStorage.setItem("vaagai_token", data.token)
-      if (data.user?.id) {
-        localStorage.setItem("vaagai_user_id", data.user.id)
-      }
+      localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
-      navigate("/farm", { replace: true })
+      navigate("/dashboard", { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed")
     } finally {

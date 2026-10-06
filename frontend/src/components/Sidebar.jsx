@@ -130,14 +130,6 @@ export default function Sidebar({ isOpen, onClose }) {
           >
             <Sprout size={22} strokeWidth={2.2} style={{ color: 'white' }} />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm leading-none tracking-tight" style={{ color: '#effdf1', fontFamily: 'Sora, sans-serif' }}>
-              VaagAi
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: '#8dbf96' }}>
-              Smart Farming
-            </p>
-          </div>
         </div>
 
         {/* Navigation */}
@@ -221,14 +213,6 @@ export default function Sidebar({ isOpen, onClose }) {
         </nav>
 
         {/* Footer */}
-        <div
-          className="px-5 py-4 text-center"
-          style={{ borderTop: '1px solid rgba(123, 207, 137, 0.14)' }}
-        >
-          <p className="text-[11px]" style={{ color: '#86ae8e' }}>
-            VaagAi — Smart AI Farming Platform
-          </p>
-        </div>
       </aside>
     </>
   )

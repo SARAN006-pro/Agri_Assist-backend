@@ -9,6 +9,8 @@ import config from './config'
 import prisma from './services/database'
 import redisService from './services/cache'
 import queueService from './services/queue'
+import { requestId } from './middleware/request-id'
+import { errorHandler } from './middleware/error-handler'
 
 // Routes
 import authRoutes from './modules/auth/auth.controller'
@@ -30,6 +32,7 @@ import feedbackRoutes from './modules/feedback/feedback.controller'
 import settingsRoutes from './modules/settings/settings.controller'
 import calendarRoutes from './modules/calendar/calendar.controller'
 import statsRoutes from './modules/stats/stats.controller'
+import analyticsRoutes from './modules/analytics/analytics.controller'
 import irrigationRoutes from './modules/irrigation/irrigation.controller'
 import economicsRoutes from './modules/economics/economics.controller'
 import farmRoutes from './modules/farm/farm.controller'
@@ -63,6 +66,7 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
+app.use(requestId)
 
 const handleHealthCheck = async (req: express.Request, res: express.Response) => {
   try {
@@ -91,7 +95,6 @@ app.get('/api/health', handleHealthCheck)
 // API Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/farms', farmsRoutes)
-app.use('/api/farm/profile', farmsRoutes)
 app.use('/api/planning', cropPlansRoutes)
 app.use('/api/uploads', uploadsRoutes)
 app.use('/api/weather', weatherRoutes)
@@ -109,10 +112,10 @@ app.use('/api/feedback', feedbackRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/calendar', calendarRoutes)
 app.use('/api/stats', statsRoutes)
+app.use('/api/analytics', analyticsRoutes)
 app.use('/api/irrigation', irrigationRoutes)
 app.use('/api/economics', economicsRoutes)
 app.use('/api/farm', farmRoutes)
-app.use('/api/crop-outcome', profileRoutes)
 
 // API documentation endpoint
 app.get('/api', (req, res) => {
@@ -134,17 +137,7 @@ app.get('/api', (req, res) => {
 })
 
 // Error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', err)
-
-  // Rate limit errors
-  if (err.message?.includes('rate limit')) {
-    res.status(429).json({ error: 'Too many requests' })
-    return
-  }
-
-  res.status(500).json({ error: 'Internal server error' })
-})
+app.use(errorHandler)
 
 // 404 handler
 app.use((req, res) => {

@@ -52,6 +52,7 @@ export default function Analytics() {
   }
 
   const [activePlot, setActivePlot] = useState<string | null>(crops[0]?.id ?? null)
+  const [selectedPlot, setSelectedPlot] = useState<string>('all')
   const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false)
 
   // Compute per-plot today's completion ratio

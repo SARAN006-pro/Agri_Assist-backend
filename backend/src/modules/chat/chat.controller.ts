@@ -23,11 +23,165 @@ interface ChatMessage {
   createdAt: Date
 }
 
+type ChatAction = {
+  type: 'navigate'
+  target: string
+  label: string
+}
+
+function titleCaseWords(value: string): string {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
+function normalizeRegionName(value: string): string {
+  return titleCaseWords(
+    value
+      .replace(/[_-]+/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  )
+}
+
+function extractMarketQuery(message: string): { crop: string; state: string } | null {
+  const normalized = message
+    .trim()
+    .replace(/[?.!,]/g, ' ')
+    .replace(/\s+/g, ' ')
+
+  const patterns = [
+    /(?:today'?s\s+|current\s+|latest\s+|now\s+)?(?:price|market price|rates?)\s+(?:of\s+)?(.+?)\s+(?:in|at|for)\s+(.+)$/i,
+    /(.+?)\s+(?:today'?s\s+|current\s+|latest\s+|now\s+)?(?:price|market price|rates?)\s+(?:in|at|for)\s+(.+)$/i,
+    /(?:price|market price|rates?)\s+for\s+(.+?)\s+(?:in|at|for)\s+(.+)$/i,
+  ]
+
+  for (const pattern of patterns) {
+    const marketMatch = normalized.match(pattern)
+    if (!marketMatch) continue
+
+    const crop = (marketMatch[1] || '').replace(/\b(today|today's|current|latest|now)\b/gi, '').trim()
+    const state = (marketMatch[2] || '').replace(/\b(today|today's|current|latest|now)\b/gi, '').trim()
+
+    if (!crop || !state) continue
+
+    return {
+      crop: titleCaseWords(crop),
+      state: normalizeRegionName(state),
+    }
+  }
+
+  return null
+}
+
+function isDetailsIntent(message: string): boolean {
+  return /\b(details?|detail|more info|more information|tell me about|give me about|about this)\b/i.test(message)
+}
+
+function isTodayTasksIntent(message: string): boolean {
+  return /(today('?s)? tasks?|tasks? today|what.*today|what.*do.*today|schedule today|today schedule|task(s)? for today)/i.test(message)
+}
+
+function resolveDeviceId(req: AuthRequest, providedDeviceId?: string): string {
+  return providedDeviceId || req.user?.userId || req.headers['x-device-id']?.toString() || 'anonymous'
+}
+
+function formatTaskTime(date: Date): string {
+  return new Date(date).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+async function buildTodayTasksResponse(req: AuthRequest): Promise<{ reply: string; action: ChatAction; data: { tasks: Array<{ id: string; title: string; status: string; priority: string; farmName: string; cropName: string | null; scheduledTime: string }> } }> {
+  if (!req.user?.userId) {
+    return {
+      reply: 'Please sign in to see your today\'s tasks. I can open Crop Planning after you log in.',
+      action: { type: 'navigate', target: '/planning', label: 'Open Crop Planning' },
+      data: { tasks: [] },
+    }
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      farm: { users: { some: { userId: req.user.userId, isActive: true } } },
+      scheduledDate: { gte: today, lt: tomorrow },
+    },
+    include: {
+      plan: { select: { cropName: true } },
+      farm: { select: { name: true } },
+    },
+    orderBy: { scheduledDate: 'asc' },
+  })
+
+  const formattedTasks = tasks.map((task) => ({
+    id: task.id,
+    title: task.title,
+    status: task.status,
+    priority: task.priority,
+    farmName: task.farm?.name || 'Farm',
+    cropName: task.plan?.cropName || null,
+    scheduledTime: formatTaskTime(task.scheduledDate),
+  }))
+
+  if (formattedTasks.length === 0) {
+    return {
+      reply: 'You have no tasks scheduled for today. I opened Crop Planning so you can review or add tasks.',
+      action: { type: 'navigate', target: '/planning', label: 'Open Crop Planning' },
+      data: { tasks: [] },
+    }
+  }
+
+  const preview = formattedTasks.slice(0, 5).map((task, index) => {
+    const cropLabel = task.cropName ? ` for ${task.cropName}` : ''
+    return `${index + 1}. ${task.title}${cropLabel} at ${task.scheduledTime} on ${task.farmName} (${task.priority}, ${task.status})`
+  })
+
+  const remainingCount = formattedTasks.length - preview.length
+
+  return {
+    reply: [
+      `Here are your today's tasks (${formattedTasks.length}):`,
+      ...preview,
+      remainingCount > 0 ? `...and ${remainingCount} more task(s).` : '',
+      'I opened Crop Planning so you can view the full schedule and mark tasks complete.',
+    ].filter(Boolean).join('\n'),
+    action: { type: 'navigate', target: '/planning', label: 'Open Crop Planning' },
+    data: { tasks: formattedTasks },
+  }
+}
+
+function buildMarketNavigationResponse(message: string): { reply: string; action: ChatAction } | null {
+  const parsed = extractMarketQuery(message)
+  if (!parsed) return null
+
+  const params = new URLSearchParams()
+  params.set('crop', parsed.crop)
+  params.set('state', parsed.state)
+
+  return {
+    reply: `I opened Market Prices for ${parsed.crop} in ${parsed.state} and selected those filters for you.`,
+    action: {
+      type: 'navigate',
+      target: `/market?${params.toString()}`,
+      label: 'Open Market Prices',
+    },
+  }
+}
+
 // Create chat session
 router.post('/sessions', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { name } = req.body
-    const deviceId = req.body.device_id || req.user?.userId
+    const deviceId = resolveDeviceId(req, req.body.device_id)
 
     const session = await prisma.$executeRaw`
       INSERT INTO "chat_sessions" (id, name, device_id, "created_at", "updated_at")
@@ -45,7 +199,7 @@ router.post('/sessions', optionalAuth, async (req: AuthRequest, res: Response): 
 // Get all chat sessions
 router.get('/sessions', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const deviceId = req.query.device_id as string || req.user?.userId
+    const deviceId = resolveDeviceId(req, req.query.device_id as string)
 
     const sessions = await prisma.$queryRaw<ChatSession[]>`
       SELECT * FROM "chat_sessions"
@@ -123,13 +277,14 @@ router.get('/history/:sessionId', optionalAuth, async (req: AuthRequest, res: Re
 router.post('/', optionalAuth, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { message, session_id, history, language, device_id } = req.body
+    const resolvedDeviceId = resolveDeviceId(req, device_id)
 
     // Create or update session
     let sessionId = session_id
     if (!sessionId) {
       const newSession = await prisma.$queryRaw<[{ id: string }]>`
         INSERT INTO "chat_sessions" (id, name, device_id, "created_at", "updated_at")
-        VALUES (gen_random_uuid(), ${message.substring(0, 50)}, ${device_id || req.user?.userId}, NOW(), NOW())
+        VALUES (gen_random_uuid(), ${message.substring(0, 50)}, ${resolvedDeviceId}, NOW(), NOW())
         RETURNING id
       `
       sessionId = newSession[0]?.id
@@ -143,13 +298,37 @@ router.post('/', optionalAuth, async (req: AuthRequest, res: Response): Promise<
 
     // Generate AI response using LLM service
     let aiResponse = ''
+    let action: ChatAction | undefined
+    let responseData: { tasks?: Array<{ id: string; title: string; status: string; priority: string; farmName: string; cropName: string | null; scheduledTime: string }> } | undefined
     try {
-      const historyMessages = (history || []).map((h: { role: string; content: string }) => ({
-        role: h.role === 'assistant' ? 'assistant' : 'user',
-        content: h.content,
-      }))
-      const llmResult = await llmService.generateResponse(message, historyMessages, language || 'en')
-      aiResponse = llmResult.content
+      const marketResponse = buildMarketNavigationResponse(message)
+      if (marketResponse) {
+        aiResponse = marketResponse.reply
+        action = marketResponse.action
+      } else if (isTodayTasksIntent(message)) {
+        const todayTasks = await buildTodayTasksResponse(req)
+        aiResponse = todayTasks.reply
+        action = todayTasks.action
+        responseData = todayTasks.data
+      } else if (isDetailsIntent(message)) {
+        const detailsTarget = message.toLowerCase().includes('plot') || message.toLowerCase().includes('farm')
+          ? '/plot-details'
+          : '/recommendations'
+
+        aiResponse = 'I opened the most relevant details page so you can review the full information there.'
+        action = {
+          type: 'navigate',
+          target: detailsTarget,
+          label: 'Open Details',
+        }
+      } else {
+        const historyMessages = (history || []).map((h: { role: string; content: string }) => ({
+          role: h.role === 'assistant' ? 'assistant' : 'user',
+          content: h.content,
+        }))
+        const llmResult = await llmService.generateResponse(message, historyMessages, language || 'en')
+        aiResponse = llmResult.content
+      }
     } catch (llmError) {
       console.error('LLM generation failed, using fallback:', llmError)
       // Fallback to rule-based response if LLM fails
@@ -171,6 +350,8 @@ router.post('/', optionalAuth, async (req: AuthRequest, res: Response): Promise<
       reply: aiResponse,
       response: aiResponse,
       session_id: sessionId,
+      action,
+      data: responseData,
     })
   } catch (error) {
     console.error('Chat error:', error)

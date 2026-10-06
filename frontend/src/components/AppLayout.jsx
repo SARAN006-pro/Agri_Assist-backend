@@ -43,6 +43,7 @@ export default function AppLayout({ children, title, subtitle, status = 'connect
           {children}
         </main>
       </div>
+
     </div>
   )
 }

@@ -11,19 +11,53 @@ export default function AuthCallback() {
   const [status, setStatus] = useState("Processing your login...")
 
   useEffect(() => {
-    const code = searchParams.get("code")
     const errorParam = searchParams.get("error")
+    const token = searchParams.get("token")
+    const userParam = searchParams.get("user")
+    const code = searchParams.get("code")
 
     if (errorParam) {
-      setError("Google authentication was cancelled or failed")
+      const errorMessages: Record<string, string> = {
+        google_auth_failed: "Google authentication was cancelled or encountered an error.",
+        no_code: "No authorization code was received from Google.",
+        oauth_not_configured: "Google OAuth is not configured on the server.",
+        token_exchange_failed: "Failed to exchange token with Google.",
+        user_info_failed: "Failed to retrieve user information from Google.",
+        account_disabled: "Your account has been deactivated. Please contact support.",
+        auth_failed: "Authentication failed. Please try again.",
+      }
+      setError(errorMessages[errorParam] || `Authentication failed: ${errorParam}`)
       return
+    }
+
+    // Direct token redirect from backend (GET /api/auth/google/callback redirect)
+    if (token) {
+      try {
+        localStorage.setItem("token", token)
+        localStorage.setItem("vaagai_token", token)
+        if (userParam) {
+          try {
+            const parsedUser = JSON.parse(decodeURIComponent(userParam))
+            localStorage.setItem("user", JSON.stringify(parsedUser))
+          } catch {
+            localStorage.setItem("user", userParam)
+          }
+        }
+        setStatus("Login successful! Redirecting to dashboard...")
+        navigate("/dashboard", { replace: true })
+        return
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to store session data")
+        return
+      }
     }
 
     if (!code) {
-      setError("No authorization code received")
+      setError("No authorization code or token received")
       return
     }
 
+    // Authorization code exchange (frontend initiated or direct callback)
     const handleCallback = async () => {
       try {
         setStatus("Completing authentication...")
@@ -40,12 +74,10 @@ export default function AuthCallback() {
           throw new Error(data.error || "Authentication failed")
         }
 
+        localStorage.setItem("token", data.token)
         localStorage.setItem("vaagai_token", data.token)
-        if (data.user?.id) {
-          localStorage.setItem("vaagai_user_id", data.user.id)
-        }
         localStorage.setItem("user", JSON.stringify(data.user))
-        navigate("/farm", { replace: true })
+        navigate("/dashboard", { replace: true })
       } catch (err) {
         setError(err instanceof Error ? err.message : "Authentication failed")
       }

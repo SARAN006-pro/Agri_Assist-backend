@@ -103,10 +103,7 @@ export default function Demo() {
         throw new Error(data.error || "Login failed")
       }
 
-      localStorage.setItem("vaagai_token", data.token)
-      if (data.user?.id) {
-        localStorage.setItem("vaagai_user_id", data.user.id)
-      }
+      localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
       setLoginOpen(false)
       navigate(redirectPath)

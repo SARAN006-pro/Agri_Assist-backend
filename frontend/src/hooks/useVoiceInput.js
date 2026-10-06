@@ -22,17 +22,21 @@ export function useVoiceInput({ language = 'en-US', onResult, onError, continuou
 
       recognition.onresult = (event) => {
         let finalText = '';
+        let interimText = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
             finalText += transcript;
+          } else {
+            interimText += transcript;
           }
         }
         if (finalText && onResult) {
-          onResult(finalText, false);
+          // final transcript
+          onResult(finalText, true);
         } else if (onResult) {
           // interim result
-          onResult(event.results[event.results.length - 1][0].transcript, true);
+          onResult(interimText || event.results[event.results.length - 1][0].transcript, false);
         }
       };
 

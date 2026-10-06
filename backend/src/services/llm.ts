@@ -72,6 +72,10 @@ Always provide helpful, practical advice tailored to the farmer's location, soil
       }
       const content = data.choices?.[0]?.message?.content || ''
 
+        if (!content.trim()) {
+          throw new Error('Groq API returned an empty response')
+        }
+
       return {
         content,
         usage: data.usage,

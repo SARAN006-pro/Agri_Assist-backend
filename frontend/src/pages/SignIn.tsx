@@ -16,11 +16,11 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const token = localStorage.getItem("vaagai_token")
+    const token = localStorage.getItem("token")
     const user = localStorage.getItem("user")
 
     if (token && user) {
-      navigate("/farm", { replace: true })
+      navigate("/dashboard", { replace: true })
     }
   }, [navigate])
 
@@ -42,12 +42,9 @@ export default function SignIn() {
         throw new Error(data.error || "Login failed")
       }
 
-      localStorage.setItem("vaagai_token", data.token)
-      if (data.user?.id) {
-        localStorage.setItem("vaagai_user_id", data.user.id)
-      }
+      localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
-      navigate("/farm", { replace: true })
+      navigate("/dashboard", { replace: true })
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
     } finally {

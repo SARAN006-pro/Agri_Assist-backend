@@ -1,183 +1,82 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClient } from './lib/queryClient'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom"
+import { lazy, Suspense } from "react"
 
-// Layout
-import AppLayout from './components/AppLayout'
+const Landing = lazy(() => import("./pages/Landing"))
+const Demo = lazy(() => import("./pages/Demo"))
+const SignIn = lazy(() => import("./pages/SignIn"))
+const SignUp = lazy(() => import("./pages/SignUp"))
+const AuthCallback = lazy(() => import("./pages/AuthCallback"))
+const Dashboard = lazy(() => import("./pages/Dashboard"))
+const Analytics = lazy(() => import("./pages/Analytics"))
+const Calendar = lazy(() => import("./pages/Calendar"))
+const Chat = lazy(() => import("./pages/Chat"))
+const Economics = lazy(() => import("./pages/Economics"))
+const Farm = lazy(() => import("./pages/Farm"))
+const Irrigation = lazy(() => import("./pages/Irrigation"))
+const Market = lazy(() => import("./pages/Market"))
+const Recommend = lazy(() => import("./pages/Recommend"))
+const Records = lazy(() => import("./pages/Records"))
+const Sensors = lazy(() => import("./pages/Sensors"))
+const Settings = lazy(() => import("./pages/Settings"))
+const Weather = lazy(() => import("./pages/Weather"))
+const FarmPage = lazy(() => import("./components/farm3d/FarmPage"))
+const FloatingChatBot = lazy(() => import("./components/FloatingChatBot"))
 
-// Auth pages
-import Login from './pages/auth/Login'
-import Register from './pages/auth/Register'
-import AuthCallback from './pages/auth/AuthCallback'
-import VerifyEmail from './pages/auth/VerifyEmail'
-
-// Main pages
-import Recommendations from './pages/Recommendations'
-import PlotDetails from './pages/PlotDetails'
-import Market from './pages/Market'
-import Weather from './pages/Weather'
-import Analytics from './pages/Analytics'
-import Settings from './pages/Settings'
-import PlanningIndex from './pages/planning/PlanningIndex'
-import Files from './pages/Files'
-import CropCalendar from './pages/CropCalendar'
-import FarmCalendar from './pages/FarmCalendar'
-
-// Farm 3D Page
-import FarmPage from './components/farm3d/FarmPage'
-
-// Protected route wrapper - checks token more thoroughly
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem('vaagai_token')
-  const userId = localStorage.getItem('vaagai_user_id')
+  const location = useLocation()
+  const token = localStorage.getItem("token") || localStorage.getItem("vaagai_token")
+  const user = localStorage.getItem("user")
 
-  // Debug log (remove in production)
-  console.log('ProtectedRoute check:', { token: !!token, userId })
-
-  if (!token || !userId) {
-    console.log('Redirecting to login - no token or userId')
-    return <Navigate to="/login" replace />
+  if (!token || !user) {
+    const urlToken = new URLSearchParams(location.search).get("token")
+    const urlUser = new URLSearchParams(location.search).get("user")
+    if (location.pathname === "/dashboard" && urlToken && urlUser) {
+      return children
+    }
+    return <Navigate to="/signin" replace />
   }
-  return <>{children}</>
+
+  return children
 }
 
-// Protected layout with sidebar
-function ProtectedLayout({ children, title, subtitle }: { children: React.ReactNode; title: string; subtitle?: string }) {
+function PageLoader() {
   return (
-    <AppLayout title={title} subtitle={subtitle}>
-      {children}
-    </AppLayout>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <div className="spinner spinner-lg" />
+    </div>
   )
 }
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+    <BrowserRouter>
+      <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/demo" element={<Demo />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-
-          {/* Protected routes - 3D Farm is default after login */}
-          <Route
-            path="/dashboard"
-            element={<Navigate to="/farm" replace />}
-          />
-          <Route
-            path="/"
-            element={<Navigate to="/farm" replace />}
-          />
-
-          {/* 3D Farm - Main page for farmers */}
-          <Route
-            path="/farm"
-            element={
-              <ProtectedRoute>
-                <FarmPage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="/farms" element={<Navigate to="/recommendations" replace />} />
-          <Route
-            path="/recommendations"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout title="Crop Recommendations" subtitle="Season-aware crop guidance and weather outlook">
-                  <Recommendations />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/plot-details"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout title="Plot Details" subtitle="Detailed view of your 3D farm plots">
-                  <PlotDetails />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/market"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout title="Market Prices" subtitle="Live crop price trends across markets">
-                  <Market />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/weather"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout title="Weather" subtitle="Real-time weather forecasts">
-                  <Weather />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout title="Analytics" subtitle="Explore yield trends and farm performance">
-                  <Analytics />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout title="Settings" subtitle="Configure your SmartFarm AI environment">
-                  <Settings />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/planning"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout title="Crop Planning" subtitle="Plan and track your farming activities">
-                  <PlanningIndex />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/calendar"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout title="Crop Calendar" subtitle="Daily tasks and stage guidance">
-                  <FarmCalendar />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/files"
-            element={
-              <ProtectedRoute>
-                <ProtectedLayout title="Files & Uploads" subtitle="Manage your farm documents">
-                  <Files />
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Fallback to 3D farm */}
-          <Route path="*" element={<Navigate to="/farm" replace />} />
+          <Route path="/auth/google/callback" element={<AuthCallback />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          <Route path="/economics" element={<ProtectedRoute><Economics /></ProtectedRoute>} />
+          <Route path="/farm" element={<ProtectedRoute><FarmPage /></ProtectedRoute>} />
+          <Route path="/irrigation" element={<ProtectedRoute><Irrigation /></ProtectedRoute>} />
+          <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
+          <Route path="/recommend" element={<ProtectedRoute><Recommend /></ProtectedRoute>} />
+          <Route path="/records" element={<ProtectedRoute><Records /></ProtectedRoute>} />
+          <Route path="/sensors" element={<ProtectedRoute><Sensors /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/weather" element={<ProtectedRoute><Weather /></ProtectedRoute>} />
         </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+        {typeof window !== 'undefined' && (localStorage.getItem('token') || localStorage.getItem('vaagai_token')) ? (
+          <Suspense fallback={null}><FloatingChatBot /></Suspense>
+        ) : null}
+      </Suspense>
+    </BrowserRouter>
   )
 }
 

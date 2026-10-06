@@ -4,13 +4,10 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "dev:backend": "docker compose -f backend/docker-compose.yml up --build db backend",
+    "dev:backend": "docker compose -f agriassist-backend/docker-compose.yml up --build db backend",
     "dev:frontend": "npm --prefix frontend run dev",
-    "build:backend": "npm --prefix backend run build",
+    "dev:frontend-legacy": "npm --prefix frontend-legacy run dev",
     "build": "npm --prefix frontend run build",
-    "build:all": "npm run build:backend && npm run build",
-    "lint:backend": "npm --prefix backend run lint",
-    "lint:frontend": "npm --prefix frontend run lint",
     "preview": "npm --prefix frontend run preview"
   },
   "dependencies": {

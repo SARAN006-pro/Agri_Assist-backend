@@ -60,6 +60,7 @@ export default function FarmPage() {
           </div>
         </>
       )}
+
     </div>
   )
 }
