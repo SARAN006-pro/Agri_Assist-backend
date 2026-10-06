@@ -1,253 +1,274 @@
-# AgriTech Workspace
+# 🌱 AgriTech — Smart AI Farming Platform
 
-Smart AI farming platform workspace with a React frontend and an Express/Prisma backend. The project is organized as a two-app workspace so the UI, API, and deployment assets can evolve together without losing clear boundaries.
+A modern, full-stack precision agriculture and farm management workspace. **AgriTech** integrates AI agronomic advisory, interactive 3D field digital twins, IoT sensor telemetry, smart irrigation automation, real-time market prices, and hyper-local meteorological forecasts into a unified farmer operating system.
 
-## What’s In The Repo
+---
 
-- `frontend/` - Vite + React application for the farmer dashboard and product UI
-- `backend/` - Express + Prisma API with auth, farms, planning, analytics, weather, chat, and realtime features
-- `scripts/dev.mjs` - Starts the frontend and backend together from the workspace root
-- `tests/` - Backend test coverage for agronomic logic and service behavior
+## 🌟 Key Features
 
-## Root Scripts
+### 🚜 Interactive 3D Farm Digital Twin
+- **3D Field Visualization:** Built with Three.js and React Three Fiber to render farm layouts, crops, soil layers, and irrigation equipment.
+- **Plot & Crop Lifecycle Monitoring:** Track crop growth stages, soil moisture states, and plot-specific metrics visually in 3D.
 
-- `npm run dev` - Start frontend and backend together
-- `npm run dev:backend` - Start the backend stack with Docker Compose
-- `npm run dev:frontend` - Start the Vite frontend only
-- `npm run build` - Build the frontend
-- `npm run build:backend` - Type-check and build the backend
-- `npm run build:all` - Build backend and frontend
-- `npm run lint:backend` - Lint backend sources
-- `npm run lint:frontend` - Lint frontend sources
+### 🤖 AI Agronomist & Multilingual Chatbot
+- **Intelligent Crop & Disease Advisory:** LLM-powered recommendations (via Groq API) for optimal crop selection, disease identification, fertilizer regimens, and yield protection.
+- **Multilingual Voice & Speech Pipeline:** Voice input and audio responses supporting multiple regional languages (**English, Hindi, Bengali, Telugu, Tamil, Marathi**).
 
-## Quick Start
+### 💧 Smart Irrigation Automation
+- **Sensor-Driven Irrigation:** Real-time calculation of soil water deficits against crop-specific thresholds.
+- **Smart Pump Control & Scheduling:** Automated irrigation triggers, manual override, water conservation analytics, and weather-aware scheduling.
 
-1. Install dependencies in both apps.
-2. Copy `backend/.env.example` to `backend/.env` and fill in the API keys and database values.
-3. Copy `frontend/.env.example` to `frontend/.env` if you need to override the API base URL.
-4. Run `npm run dev` from the repository root.
+### 📡 Real-Time IoT Sensor Telemetry
+- **Field Sensors:** Live streaming of environmental metrics:
+  - Soil Moisture (%) & Soil Temperature (°C)
+  - Ambient Air Temperature & Relative Humidity
+  - Soil pH & NPK (Nitrogen, Phosphorus, Potassium) nutrient levels
+- **Configurable Alerts:** Immediate notifications via WebSockets when values breach safe ranges.
 
-The frontend will start with Vite, and the backend will be available on its configured API port. If you prefer Docker for the backend, use the backend compose files in `backend/`.
+### 📈 Market Intelligence & Agmarknet Pricing
+- **Live Mandi Prices:** Real-time agricultural commodity prices fetched from the government Agmarknet repository.
+- **Price Trend Visualizations:** Interactive historical price charts, volatility metrics, and revenue estimates to optimize market timing.
 
-## Local Setup
+### ⛅ Hyper-Local Weather Intelligence
+- **High-Precision Forecasts:** Powered by Open-Meteo with 7-day hourly outlooks, precipitation chances, wind speed, solar radiation, and frost/heatwave alerts.
+- **Farming Action Advisories:** Context-aware recommendations tailored to oncoming rainfall and weather shifts.
 
-### Frontend
+### 📅 Crop Planning, Tasks & Calendar
+- **Full Crop Lifecycles:** Seed-to-harvest planning with automatic task generation for planting, fertilization, weeding, and harvesting.
+- **Interactive Calendar & Autosave:** Real-time draft autosaving for crop planning forms, daily task agendas, and Gantt-style activity timelines.
 
-The frontend is a production-oriented React app with routing, dashboard pages, and shared UI primitives. Run it with:
+### 📊 Farm Economics & Yield Analytics
+- **Financial Tracking:** Profit & loss analysis, input cost tracking (seeds, fertilizers, fuel, labor), and harvest yields in metric tonnes.
+- **Yield Forecasting:** Predictive algorithms forecasting yield based on sensor data and climatic conditions.
 
-```bash
-npm --prefix frontend install
-npm --prefix frontend run dev
-```
+### 🔒 Enterprise Auth & Cloud Storage
+- **Authentication:** Secure JWT sessions, bcrypt password hashing, and Google OAuth 2.0 single sign-on.
+- **Supabase Cloud Storage:** Secure file management for soil test reports, farm land deeds, invoices, and harvest receipts.
 
-### Backend
+---
 
-The backend uses Express, Prisma, Socket.IO, and a set of feature modules for farming workflows. Run it with:
+## 🛠️ Technology Stack
 
-```bash
-npm --prefix backend install
-npm --prefix backend run dev
-```
+| Layer | Technologies |
+|---|---|
+| **Frontend UI** | React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, Shadcn UI / Radix primitives |
+| **3D & Visualizations** | Three.js, `@react-three/fiber`, `@react-three/drei`, Recharts |
+| **State & Data Fetching** | Zustand, `@tanstack/react-query`, Axios |
+| **Backend API** | Node.js, Express.js, TypeScript, REST API, Zod validation |
+| **Database & ORM** | PostgreSQL, Prisma ORM |
+| **Realtime & Queue** | Socket.IO (WebSockets), Redis (ioredis), BullMQ background workers |
+| **AI / LLM Services** | Groq API (Llama 3 / Mixtral models) |
+| **Third-Party APIs** | Open-Meteo API, Agmarknet API, Supabase Storage, Google OAuth |
 
-For a Docker-based backend workflow, use the compose files under `backend/`.
+---
 
-## Environment Files
-
-- `backend/.env.example` contains the backend runtime variables, including authentication, database, cache, storage, and provider keys.
-- `frontend/.env.example` contains the frontend API base URL and OAuth client settings.
-
-## Project Structure
+## 📁 Repository Structure
 
 ```text
 agriTech/
-├── backend/
-├── frontend/
-├── migrations/
+├── backend/                   # Express.js + Prisma TypeScript API server
+│   ├── prisma/                # Prisma schema & database migrations
+│   ├── src/
+│   │   ├── modules/           # Feature controllers, routes & middleware (auth, farm, planning...)
+│   │   ├── services/          # Business services (AI, weather, market, cache, queue, storage)
+│   │   ├── config.ts          # Server configuration & environment validation
+│   │   └── index.ts           # Express & Socket.IO server entrypoint
+│   ├── docker-compose.yml     # Local PostgreSQL + Redis development containers
+│   └── package.json
+│
+├── frontend/                  # React 19 + TypeScript + Vite web application
+│   ├── src/
+│   │   ├── components/        # UI components, layout, and 3D scenes (Three.js)
+│   │   ├── features/          # Feature slices (irrigation, weather, voice, auth...)
+│   │   ├── pages/             # Route pages (Dashboard, 3D Farm, Market, Analytics, Chat...)
+│   │   ├── store/             # Zustand stores (farm, auth, sensors)
+│   │   └── lib/               # Utility functions and API clients
+│   ├── vite.config.ts         # Vite bundler configuration & path aliases (@/*)
+│   ├── tsconfig.app.json      # Client TypeScript compilation settings
+│   └── package.json
+│
 ├── scripts/
-├── tests/
-└── README.md
+│   └── dev.mjs                # Monorepo development runner (concurrent backend + frontend)
+├── tests/                     # Backend and algorithmic integration test suites
+├── package.json               # Root workspace scripts & dependencies
+└── README.md                  # Project documentation
 ```
 
-## Notes
+---
 
-- The workspace is set up for a split frontend/backend workflow rather than a single monolith.
-- The root dev script is intentionally small and delegates to the two app folders so each side can be developed independently or together.
-- Frontend API calls should target the backend port defined in `frontend/.env.example`.
-| POST | `/api/predict/crop` | Recommend a crop from soil and climate inputs |
-| POST | `/api/predict/yield` | Predict yield in tonnes per hectare |
+## 🚀 Quick Start
 
-**Example — crop recommendation:**
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18.0.0 or higher)
+- [npm](https://www.npmjs.com/) (v9.0.0 or higher)
+- [Docker](https://www.docker.com/) & Docker Compose (optional, for running PostgreSQL & Redis locally)
 
+---
+
+### 1. Clone the Repository
 ```bash
-curl -X POST http://localhost:8000/api/predict/crop \
-  -H "Content-Type: application/json" \
-  -d '{
-    "N": 90, "P": 42, "K": 43,
-    "temperature": 20.8,
-    "humidity": 82.0,
-    "ph": 6.5,
-    "rainfall": 202.9
-  }'
+git clone https://github.com/SARAN006-pro/SmartFarm.git
+cd SmartFarm
 ```
 
 ---
 
-### Other Endpoints
+### 2. Environment Configuration
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/stats` | Dashboard totals |
-| GET | `/api/stats/history` | 7-day activity chart data |
-| GET | `/api/stats/breakdown` | Usage breakdown for pie chart |
-| GET | `/api/market/prices` | Current crop market prices |
-| POST | `/api/irrigation/advice` | Get irrigation recommendation |
-| POST | `/api/economics/margin` | Calculate profit margin |
-| GET | `/api/records` | List yield records |
-| POST | `/api/records` | Create a yield record |
-| GET | `/api/farm/profile` | Get farm profile |
-| POST | `/api/farm/profile` | Create or update farm profile |
-| GET | `/api/calendar` | Farming calendar events |
-| GET | `/api/sensors/readings` | Query recent sensor readings |
-| POST | `/api/sensors/data` | Ingest a new sensor reading |
-| POST | `/api/translate` | Translate text to a target language |
-| GET | `/health` | Health check (returns `{"status": "ok"}`) |
-
----
-
-## Testing
-
-> **Note:** The project does not currently ship a test suite. The section below describes the recommended approach for adding and running tests.
-
-**Recommended test setup with pytest:**
-
+#### Backend Environment:
+Copy the backend example file:
 ```bash
-pip install pytest pytest-asyncio httpx
+cp backend/.env.example backend/.env
+```
+Ensure the key variables in `backend/.env` are populated:
+```env
+PORT=3002
+NODE_ENV=development
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/agritech?schema=public"
+JWT_SECRET="your-super-secret-jwt-key"
+FRONTEND_URL="http://localhost:5173"
 
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=app --cov-report=term-missing
+# Optional / External APIs
+REDIS_HOST=localhost
+REDIS_PORT=6379
+GROQ_API_KEY="your-groq-api-key"
+WEATHER_API_KEY=""
+AGMARKNET_API_KEY=""
+SUPABASE_URL=""
+SUPABASE_SERVICE_KEY=""
 ```
 
-**Writing a basic endpoint test:**
-
-```python
-# tests/test_health.py
-from httpx import AsyncClient
-from app.main import app
-import pytest
-
-@pytest.mark.asyncio
-async def test_health():
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.get("/health")
-    assert response.status_code == 200
-    assert response.json()["status"] == "ok"
-```
-
-**Manually verifying the ML models:**
-
+#### Frontend Environment:
+Copy the frontend example file (if present) or verify `frontend/.env`:
 ```bash
-# Start the server, then test crop prediction
-curl -X POST http://localhost:8000/api/predict/crop \
-  -H "Content-Type: application/json" \
-  -d '{"N": 90, "P": 42, "K": 43, "temperature": 20.8, "humidity": 82.0, "ph": 6.5, "rainfall": 202.9}'
-# Expected: a crop recommendation with confidence score
+cp frontend/.env.example frontend/.env
+```
+```env
+VITE_API_URL="http://localhost:3002/api"
+VITE_SOCKET_URL="http://localhost:3002"
 ```
 
 ---
 
-## Troubleshooting
+### 3. Start Database Services (Optional via Docker)
 
-**`GROQ_API_KEY is not set` on startup**  
-You have not copied `.env.example` to `.env`, or the file is not in the project root. Run `cp .env.example .env` and add your key.
-
-**`Database connection refused`**  
-PostgreSQL is not running or the `DATABASE_URL` is wrong. With Docker, wait 10–15 seconds for the `db` service health check to pass before the app starts. With a local install, verify PostgreSQL is running: `pg_isready`.
-
-**`ML model training slow on first start`**  
-This is expected behaviour. On first boot, both ML models train from scratch and save to `data/ml_models/`. Subsequent starts load from disk in under a second.
-
-**`faiss-cpu` install fails on Mac M1/M2**  
-Use the no-binary flag:
+If you have Docker installed, start PostgreSQL and Redis with one command:
 ```bash
-pip install faiss-cpu --no-binary faiss-cpu
+docker compose -f backend/docker-compose.yml up -d db redis
 ```
 
-**CORS error from the frontend**  
-Add your frontend's origin to `ALLOWED_ORIGINS` in `.env`. Make sure there are no trailing slashes and no spaces between comma-separated values.
-
-**`ModuleNotFoundError` after pulling updates**  
-Dependencies have likely changed. Re-install: `pip install -r requirements.txt`. With Docker, rebuild: `docker compose up --build`.
-
-**FAISS index feels stale after re-uploading documents**  
-The FAISS index in `data/faiss_index/` persists across restarts. To force a rebuild, delete the directory and restart the server — it will be recreated from scratch.
-
 ---
 
-## Contributing
+### 4. Initialize Database with Prisma
 
-Contributions are welcome. Please follow these steps:
-
-1. **Fork** the repository and create a feature branch from `main`:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-2. **Install dependencies** in a virtual environment:
-   ```bash
-   python -m venv venv && source venv/bin/activate
-   pip install -r requirements.txt
-   ```
-
-3. **Follow the existing patterns.** Each feature domain lives in its own router under `app/api/routers/`. Business logic goes in `app/services/` or `app/ml/`. Keep database models in `app/db/models.py`.
-
-4. **Write or update tests** for any new endpoints or changed behaviour.
-
-5. **Lint and format** your code before submitting:
-   ```bash
-   pip install ruff black
-   ruff check app/
-   black app/
-   ```
-
-6. **Open a pull request** against `main` with a clear description of what the change does and why.
-
-**Code style:**
-- Python 3.11+, type hints throughout
-- PEP 8 via `black` formatter
-- Docstrings on all public functions and classes
-- No hardcoded credentials — environment variables only
-
----
-
-## License
-
-This project does not currently specify a license. All rights are reserved by the project author unless a license file is added to the repository.
-
-If you intend to use this project in production or distribute it, please add an appropriate open-source license (MIT, Apache 2.0, etc.) and update this section.
-
----
-
-## Support
-
-- **Bug reports and feature requests:** Open an issue in the repository's issue tracker.
-- **API questions:** The auto-generated docs at `/docs` cover request/response schemas for every endpoint.
-- **Groq API issues:** Refer to [console.groq.com](https://console.groq.com) for model availability, rate limits, and billing.
-
----
-
-*Built with FastAPI · Groq · FAISS · scikit-learn*
+Generate the Prisma client and push the database schema:
+```bash
 cd backend
-# Start Docker services first
-docker-compose up -d db redis
+npm install
+npm run db:generate
+npm run db:push
+cd ..
+```
 
-# Generate Prisma client
-npx prisma generate
+---
 
-# Push schema to database
-npx prisma db push
+### 5. Install Dependencies and Run
 
-# Start development server
+From the **workspace root**, install dependencies and launch both frontend and backend concurrently:
+
+```bash
+# Install root, backend, and frontend packages
+npm install
+npm --prefix backend install
+npm --prefix frontend install
+
+# Start both applications simultaneously
 npm run dev
+```
+
+Once running:
+- 🖥️ **Frontend:** [http://localhost:5173](http://localhost:5173)
+- ⚙️ **Backend API:** [http://localhost:3002/api](http://localhost:3002/api)
+- 🩺 **Health Check:** [http://localhost:3002/health](http://localhost:3002/health)
+
+---
+
+## 💻 Available Workspace Scripts
+
+| Command | Action |
+|---|---|
+| `npm run dev` | Runs both backend (`localhost:3002`) and frontend (`localhost:5173`) concurrently |
+| `npm run dev:frontend` | Runs only the Vite frontend development server |
+| `npm run dev:backend` | Boots the Docker Compose database and backend services |
+| `npm run build` | Builds the frontend for production into `frontend/dist` |
+| `npm run build:backend` | Compiles the backend TypeScript into `backend/dist` |
+| `npm run build:all` | Compiles both backend and frontend applications |
+| `npm run preview` | Previews the frontend production bundle locally |
+
+---
+
+## 📡 API Endpoints Overview
+
+### Authentication & User
+- `POST /api/auth/register` — Register a new farmer account
+- `POST /api/auth/login` — Sign in with email and password
+- `GET /api/auth/me` — Retrieve the currently authenticated user
+- `PUT /api/auth/profile` — Update account profile details
+- `POST /api/auth/change-password` — Change password
+- `GET /api/auth/google` / `GET /api/auth/google/callback` — Google OAuth 2.0 flow
+
+### Farm & Field Management
+- `GET /api/farms` — List farms belonging to the user
+- `POST /api/farms` — Create a new farm
+- `GET /api/farms/:id` — Get detailed farm profile, fields, and plots
+- `PUT /api/farms/:id` — Update farm details
+- `DELETE /api/farms/:id` — Remove farm
+
+### Crop Planning & Task Management
+- `GET /api/planning` — List active crop plans
+- `POST /api/planning` — Create a crop plan
+- `GET /api/planning/:id` — Get full plan details and schedule
+- `GET /api/planning/tasks/today` — Retrieve tasks scheduled for today
+- `POST /api/planning/autosave` — Persist plan drafts in real-time
+- `GET /api/planning/autosave/:entityType/:entityId` — Load saved draft
+
+### Weather & Agronomic Insights
+- `GET /api/weather/current?lat=...&lng=...` — Current conditions
+- `GET /api/weather/forecast?lat=...&lng=...&days=7` — 7-day forecast
+- `POST /api/predict/crop` — AI crop recommendations based on soil NPK, pH, and climate
+- `POST /api/irrigation/advice` — Smart irrigation deficit recommendation
+
+### Market Prices
+- `GET /api/market/prices` — Fetch live agricultural market commodity prices
+- `GET /api/market/prices/:crop` — Specific commodity price history and trends
+
+### Real-Time IoT Sensors
+- `GET /api/sensors/readings` — Retrieve recent sensor telemetry
+- `POST /api/sensors/data` — Ingest sensor readings from field gateway devices
+
+---
+
+## 🔄 Real-Time WebSockets (Socket.IO)
+
+The backend exposes real-time Socket.IO rooms for zero-latency updates:
+- `user:<userId>`: User-specific alerts and background notifications
+- `farm:<farmId>`: Collaborative farm updates, task status changes, and sensor telemetry
+- `market:updates`: Live commodity price ticker events
+- `task:updated`: Emitted when a farm activity is modified or completed
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcomed to make smart farming accessible to everyone:
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m "feat: Add AmazingFeature"`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the terms specified in the repository. All rights reserved.
