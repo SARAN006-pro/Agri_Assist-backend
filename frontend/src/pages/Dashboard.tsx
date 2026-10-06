@@ -11,7 +11,7 @@ interface UserData {
   role: string
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3002"
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3002").replace(/\/+$/, "")
 
 export default function Dashboard() {
   const navigate = useNavigate()

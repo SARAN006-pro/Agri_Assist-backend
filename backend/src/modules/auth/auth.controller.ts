@@ -223,41 +223,79 @@ router.post('/google/sync', async (req: AuthRequest, res: Response): Promise<voi
   }
 })
 
+// Helpers for dynamic OAuth resolution
+const resolveRedirectUri = (req: express.Request): string => {
+  if (config.google.redirectUri) return config.google.redirectUri
+  const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https'
+  const host = req.get('host')
+  return `${proto}://${host}/api/auth/google/callback`
+}
+
+const resolveFrontendUrl = (req: express.Request, stateReturnTo?: string): string => {
+  if (stateReturnTo && (stateReturnTo.startsWith('http://') || stateReturnTo.startsWith('https://'))) {
+    return stateReturnTo.replace(/\/+$/, '')
+  }
+  if (process.env.FRONTEND_URL) {
+    return process.env.FRONTEND_URL.replace(/\/+$/, '')
+  }
+  const referer = req.headers.referer as string
+  if (referer) {
+    try {
+      const u = new URL(referer)
+      return `${u.protocol}//${u.host}`
+    } catch {}
+  }
+  return 'https://vaagai.assist-ai.app'
+}
+
 // Google OAuth - Redirect to Google
 router.get('/google', (req, res) => {
-  const { clientId, redirectUri } = config.google
+  const { clientId } = config.google
+  const redirectUri = resolveRedirectUri(req)
 
-  if (!clientId || !redirectUri) {
-    res.status(500).json({ error: 'Google OAuth not configured' })
+  if (!clientId) {
+    res.status(500).json({ error: 'Google OAuth Client ID not configured' })
     return
   }
 
+  const returnTo = (req.query.returnTo as string) || req.headers.referer || resolveFrontendUrl(req)
+  const state = Buffer.from(JSON.stringify({ returnTo })).toString('base64url')
+
   const scope = 'openid profile email'
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=select_account`
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}&access_type=offline&prompt=select_account`
   res.redirect(authUrl)
 })
 
 // Google OAuth Callback - GET (redirect from Google)
 router.get('/google/callback', async (req, res: Response): Promise<void> => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  let stateReturnTo: string | undefined
+  try {
+    if (req.query.state && typeof req.query.state === 'string') {
+      const parsed = JSON.parse(Buffer.from(req.query.state, 'base64url').toString('utf8'))
+      stateReturnTo = parsed.returnTo
+    }
+  } catch {}
+
+  const frontendUrl = resolveFrontendUrl(req, stateReturnTo)
+  const redirectUri = resolveRedirectUri(req)
 
   try {
     const { code, error: googleError } = req.query
 
     if (googleError) {
-      res.redirect(`${frontendUrl}/login?error=google_auth_failed`)
+      res.redirect(`${frontendUrl}/signin?error=google_auth_failed`)
       return
     }
 
     if (!code || typeof code !== 'string') {
-      res.redirect(`${frontendUrl}/login?error=no_code`)
+      res.redirect(`${frontendUrl}/signin?error=no_code`)
       return
     }
 
-    const { clientId, clientSecret, redirectUri } = config.google
+    const { clientId, clientSecret } = config.google
 
-    if (!clientId || !clientSecret || !redirectUri) {
-      res.redirect(`${frontendUrl}/login?error=oauth_not_configured`)
+    if (!clientId || !clientSecret) {
+      res.redirect(`${frontendUrl}/signin?error=oauth_not_configured`)
       return
     }
 
@@ -323,7 +361,7 @@ router.get('/google/callback', async (req, res: Response): Promise<void> => {
           },
         })
       } else if (!user.isActive) {
-        res.redirect(`${frontendUrl}/login?error=account_disabled`)
+        res.redirect(`${frontendUrl}/signin?error=account_disabled`)
         return
       }
 
@@ -370,7 +408,7 @@ router.get('/google/callback', async (req, res: Response): Promise<void> => {
     res.redirect(`${frontendUrl}/auth/callback?token=${token}&user=${userParam}`)
   } catch (error) {
     console.error('Google OAuth callback error:', error)
-    res.redirect(`${frontendUrl}/login?error=auth_failed`)
+    res.redirect(`${frontendUrl}/signin?error=auth_failed`)
   }
 })
 
@@ -384,9 +422,10 @@ router.post('/google/callback', async (req, res: Response): Promise<void> => {
       return
     }
 
-    const { clientId, clientSecret, redirectUri } = config.google
+    const { clientId, clientSecret } = config.google
+    const redirectUri = resolveRedirectUri(req)
 
-    if (!clientId || !clientSecret || !redirectUri) {
+    if (!clientId || !clientSecret) {
       res.status(500).json({ error: 'Google OAuth not configured' })
       return
     }

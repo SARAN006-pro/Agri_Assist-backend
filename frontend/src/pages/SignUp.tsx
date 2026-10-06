@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sprout, Loader2, Mail, Lock, User } from "lucide-react"
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3002"
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:3002").replace(/\/+$/, "")
 
 export default function SignUp() {
   const navigate = useNavigate()

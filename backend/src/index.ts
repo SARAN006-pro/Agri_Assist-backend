@@ -41,15 +41,54 @@ import farmRoutes from './modules/farm/farm.controller'
 const app = express()
 const httpServer = createServer(app)
 
+const isAllowedOrigin = (origin: string | undefined): boolean => {
+  if (!origin) return true
+  const customOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean)
+
+  if (customOrigins.includes('*') || customOrigins.includes(origin)) {
+    return true
+  }
+
+  try {
+    const url = new URL(origin)
+    const host = url.hostname
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === 'vaagai.assist-ai.app' ||
+      host.endsWith('.assist-ai.app') ||
+      host.endsWith('.vercel.app') ||
+      host.endsWith('.onrender.com')
+    ) {
+      return true
+    }
+  } catch {
+    // ignore parse error
+  }
+
+  return config.server.nodeEnv !== 'production'
+}
+
 // Socket.IO for realtime
 export const io = new Server(httpServer, {
   cors: {
-    origin: config.server.nodeEnv === 'production'
-      ? process.env.ALLOWED_ORIGINS?.split(',') || '*'
-      : '*',
+    origin: (origin, callback) => {
+      callback(null, isAllowedOrigin(origin))
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },
+})
+
+// Normalize leading consecutive slashes (e.g. //api/auth -> /api/auth)
+app.use((req, res, next) => {
+  if (req.url.startsWith('//')) {
+    req.url = req.url.replace(/^\/+/, '/')
+  }
+  next()
 })
 
 // Middleware
@@ -59,9 +98,13 @@ app.use(helmet({
 }))
 app.use(compression())
 app.use(cors({
-  origin: config.server.nodeEnv === 'production'
-    ? process.env.ALLOWED_ORIGINS?.split(',') || false
-    : true,
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true)
+    } else {
+      callback(null, false)
+    }
+  },
   credentials: true,
 }))
 app.use(express.json({ limit: '10mb' }))
